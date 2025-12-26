@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS de Noticias - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* Estilos CSS estándar */
+        .badge { 
+            padding: 0.25rem 0.5rem; 
+            border-radius: 0.25rem; 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            border-width: 1px; 
+            border-style: solid; 
+        }
+        .badge-prog { background-color: #eef2ff; color: #4338ca; border-color: #e0e7ff; }
+        .badge-pend { background-color: #f9fafb; color: #4b5563; border-color: #e5e7eb; }
+        .badge-cola { background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+
+        /* Botones Navegación */
+        .nav-btn {
+            padding: 0.375rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            color: #6b7280;
+            background-color: transparent;
+            cursor: pointer;
+        }
+        .nav-btn:hover {
+            color: #4f46e5;
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .nav-active {
+            color: #4f46e5 !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Animaciones */
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fa-spin-fast { animation: fa-spin 1s infinite linear; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="login-view" class="min-h-screen flex items-center justify-center bg-gray-200">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-96 border border-gray-100">
+            <div class="text-center mb-6">
+                <div class="bg-indigo-600 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-3 text-white">
+                    <i class="fas fa-newspaper fa-lg"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Acceso CMS</h1>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <input type="text" name="username" placeholder="Usuario" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="password" name="password" placeholder="Contraseña" required class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <button class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition">Iniciar Sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-view" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white shadow-sm border-b sticky top-0 z-20">
+            <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-600 text-white p-1.5 rounded"><i class="fas fa-robot"></i></div>
+                    <span class="font-bold text-lg tracking-tight">AutoPublisher <span class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">Docker</span></span>
+                </div>
+                <nav class="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                    <button onclick="showSection('crudo')" id="nav-crudo" class="nav-btn">Entrada</button>
+                    <button onclick="showSection('pending')" id="nav-pending" class="nav-btn">Pendientes</button>
+                    <button onclick="showSection('published')" id="nav-published" class="nav-btn">Historial</button>
+                    <button onclick="showSection('errors')" id="nav-errors" class="nav-btn text-red-600 hover:text-red-700">Errores</button>
+                    <button onclick="showSection('config')" id="nav-config" class="nav-btn">Config</button>
+                </nav>
+                <button id="logout-btn" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-power-off"></i></button>
+            </div>
+        </header>
+
+        <main class="flex-grow container mx-auto p-6 space-y-6">
+            
+            <section id="sec-crudo" class="hidden fade-in">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Bandeja de Entrada</h2>
+                        <p class="text-xs text-gray-500">Noticias capturadas. Selecciona para procesar.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="fetchData('raw')" class="text-gray-400 hover:text-indigo-600 p-2"><i class="fas fa-sync-alt"></i></button>
+                        <button id="process-selected-raw-button" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Procesar Selección (<span id="sel-count">0</span>)
+                        </button>
+                        <button id="delete-selected-raw-button" class="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-500 font-semibold border-b">
+                            <tr>
+                                <th class="p-4 w-10 text-center"><input type="checkbox" id="select-all-raw" class="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"></th>
+                                <th class="p-4 w-16">ID</th>
+                                <th class="p-4 text-left">Fuente / Titular</th>
+                                <th class="p-4 w-24 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-raw" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                    <div id="pag-raw" class="p-3 bg-gray-50 border-t flex justify-end"></div>
+                </div>
+            </section>
+
+            <section id="sec-pending" class="hidden fade-in">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Gestión de Pendientes</h2>
+                        <p class="text-xs text-gray-500">Edita, programa y aprueba el contenido.</p>
+                    </div>
+                    <div class="flex gap-3 items-center">
+                        <select id="cat-filter" onchange="fetchData('pending')" class="text-sm border-gray-300 rounded-lg p-2 shadow-sm focus:ring-indigo-500"><option>Todas</option></select>
+                        <button onclick="fetchData('pending')" class="text-gray-400 hover:text-indigo-600 p-2"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-indigo-50 text-indigo-900 font-bold border-b border-indigo-100">
+                            <tr>
+                                <th class="p-4 w-16">ID</th>
+                                <th class="p-4 w-24">Estado</th>
+                                <th class="p-4 w-32">Categoría</th>
+                                <th class="p-4">Título Propuesto</th>
+                                <th class="p-4 w-40">Programación</th>
+                                <th class="p-4 w-24 text-center">Gestionar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-pending" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                    <div id="pag-pending" class="p-3 bg-gray-50 border-t flex justify-end"></div>
+                </div>
+            </section>
+
+            <section id="sec-published" class="hidden fade-in">
+                <h2 class="text-xl font-bold mb-4">Historial de Publicaciones <button onclick="fetchData('published')" class="text-gray-400 ml-2"><i class="fas fa-sync-alt text-sm"></i></button></h2>
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-500 font-semibold border-b"><tr><th class="p-3">Título</th><th class="p-3 w-24 text-center">Estado</th></tr></thead>
+                        <tbody id="list-published" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                    <div id="pag-published" class="p-3 bg-gray-50 border-t flex justify-end"></div>
+                </div>
+            </section>
+
+            <section id="sec-errors" class="hidden fade-in">
+                <div class="flex justify-between mb-4">
+                    <h2 class="text-xl font-bold text-red-600">Errores</h2>
+                    <button onclick="clearErrors()" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">Limpiar Todo</button>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-red-50 text-red-500 font-semibold border-b"><tr><th class="p-3">Error</th></tr></thead>
+                        <tbody id="list-errors" class="divide-y divide-red-50"></tbody>
+                    </table>
+                    <div id="pag-errors" class="p-3 bg-gray-50 border-t flex justify-end"></div>
+                </div>
+            </section>
+
+            <section id="sec-config" class="hidden fade-in">
+                <div class="max-w-md bg-white p-6 rounded-xl shadow-sm border">
+                    <h2 class="font-bold text-lg mb-4">Configuración de Tiempos</h2>
+                    <form id="settings-form" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Scraper (Minutos)</label>
+                            <input id="set-scrap" type="number" class="w-full border p-2 rounded focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Publicador Cola (Minutos)</label>
+                            <input id="set-pub" type="number" class="w-full border p-2 rounded focus:ring-indigo-500">
+                        </div>
+                        <button class="w-full bg-gray-800 text-white py-2 rounded hover:bg-black transition">Guardar Cambios</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-10"><i id="toast-icon" class="fas fa-info-circle"></i><span id="toast-msg" class="font-medium text-sm">Notificación</span></div>
+
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full max-w-5xl h-[95vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden transform transition-all scale-100">
+            
+            <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800">Editor de Contenido</h3>
+                    <p class="text-xs text-gray-500">Editando Post #<span id="modal-id"></span></p>
+                </div>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700 text-xl transition">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-grow bg-white space-y-6">
+                <input type="hidden" id="pid">
+                
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Categoría</label>
+                    <select id="edit-category" class="w-full border p-2 rounded text-sm bg-white focus:ring-indigo-500"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-blue-700 uppercase"><i class="fab fa-facebook mr-1"></i> Facebook</label>
+                            <button onclick="regen('facebook')" class="text-xs text-blue-500 hover:underline"><i class="fas fa-bolt mr-1"></i>Regenerar</button>
+                        </div>
+                        <input id="fb_t" class="w-full border border-gray-300 p-2.5 rounded-lg text-sm font-semibold" placeholder="Título FB">
+                        <textarea id="fb_c" rows="8" class="w-full border border-gray-300 p-2.5 rounded-lg text-sm resize-none" placeholder="Contenido FB"></textarea>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-gray-600 uppercase"><i class="fab fa-wordpress mr-1"></i> Web / WordPress</label>
+                            <button onclick="regen('wordpress')" class="text-xs text-blue-500 hover:underline"><i class="fas fa-bolt mr-1"></i>Regenerar</button>
+                        </div>
+                        <input id="wp_t" class="w-full border border-gray-300 p-2.5 rounded-lg text-sm font-semibold" placeholder="Título Web">
+                        <textarea id="wp_c" rows="8" class="w-full border border-gray-300 p-2.5 rounded-lg text-sm resize-none" placeholder="Cuerpo Web"></textarea>
+                    </div>
+                </div>
+
+                <div class="border p-4 rounded-xl flex gap-4 items-start bg-gray-50">
+                    <img id="prev_img" class="w-32 h-24 object-cover rounded-lg border bg-white">
+                    <div class="flex-grow space-y-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Imagen (URL Editable)</label>
+                        <input id="img_url" class="w-full border p-2 text-sm rounded bg-white focus:ring-indigo-500" placeholder="https://...">
+                        <label><span class="sr-only">Subir</span><input type="file" id="img_file" class="text-xs text-gray-500"></label>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                    <h4 class="text-sm font-bold text-indigo-800 mb-2">Personalizar con IA</h4>
+                    <div class="flex flex-col gap-2">
+                        <select id="cust_field" class="text-xs p-2 rounded border border-indigo-200 bg-white focus:ring-indigo-500">
+                            <option value="fb_content">Post FB</option>
+                            <option value="fb_title">Título FB</option>
+                            <option value="wp_content">Cuerpo Web</option>
+                            <option value="wp_title">Título Web</option>
+                        </select>
+                        <textarea id="cust_prompt" rows="2" placeholder="Instrucción (Ej: Resume en 2 líneas, usa tono serio...)" class="text-xs p-2 rounded border w-full resize-none focus:ring-indigo-500"></textarea>
+                        <button onclick="customGen()" class="bg-indigo-600 text-white text-xs px-6 py-2 rounded hover:bg-indigo-700 font-bold self-end transition">Generar Mejora</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t bg-gray-50 flex flex-col lg:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 bg-white p-2 rounded-lg border shadow-sm">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Modo</label>
+                        <select id="p_mode" class="text-sm font-bold text-gray-700 bg-transparent outline-none cursor-pointer">
+                            <option value="auto">📡 Auto</option>
+                            <option value="rebote_foto">📸 Rebote Foto</option>
+                            <option value="rebote_link">🔗 Rebote Link</option>
+                        </select>
+                    </div>
+                    <div class="w-px h-8 bg-gray-200"></div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Programar (Opcional)</label>
+                        <input type="datetime-local" id="p_date" class="text-sm text-gray-700 bg-transparent outline-none">
+                    </div>
+                    <button onclick="document.getElementById('p_date').value=''" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times-circle"></i></button>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="save('pendiente')" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-50 transition text-sm">Guardar Borrador</button>
+                    <button onclick="save('publicar')" class="px-5 py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition text-sm shadow-md flex items-center"><i class="fas fa-layer-group mr-2"></i> A la Cola (45m)</button>
+                    <button onclick="save('programado')" class="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition text-sm shadow-md flex items-center"><i class="fas fa-clock mr-2"></i> Programar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DOCKER: API VACÍA ---
+        const API = ""; 
+        const ROWS = 10; 
+        let TOKEN = sessionStorage.getItem('t');
+
+        if(TOKEN) init(); else document.getElementById('login-view').classList.remove('hidden');
+
+        // TOAST SYSTEM (5s)
+        function toast(msg, type='info', duration=5000) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            t.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 translate-y-0 opacity-100 font-medium text-sm ${type==='error'?'bg-red-600':'bg-gray-900'}`;
+            if(type==='success') t.classList.add('bg-green-600');
+            setTimeout(()=>t.classList.add('translate-y-10','opacity-0'), duration);
+        }
+
+        // API WRAPPER
+        async function req(url, m='GET', b=null) {
+            const opts = {method:m, headers:{'Authorization':`Bearer ${TOKEN}`, 'Content-Type':'application/json'}};
+            if(b) opts.body = JSON.stringify(b);
+            try {
+                const r = await fetch(API+url, opts);
+                if(r.status===401) { sessionStorage.removeItem('t'); location.reload(); throw new Error("Sesión caducada"); }
+                if(!r.ok) throw new Error((await r.json()).detail);
+                return r.status===204 ? null : await r.json();
+            } catch(e) { throw e; }
+        }
+
+        async function upload(id, file) {
+            const fd = new FormData(); fd.append('file', file);
+            return await (await fetch(`${API}/posts/upload-image/${id}`, {method:'POST', headers:{'Authorization':`Bearer ${TOKEN}`}, body:fd})).json();
+        }
+
+        // LOGIN
+        document.getElementById('login-form').onsubmit = async(e) => { e.preventDefault(); const fd=new FormData(e.target); try{ const r=await fetch(API+'/token',{method:'POST',body:fd}); if(r.ok){TOKEN=(await r.json()).access_token;sessionStorage.setItem('t',TOKEN);init();}else alert("Datos incorrectos"); } catch{ alert("Error de conexión"); } };
+        document.getElementById('logout-btn').onclick = () => { sessionStorage.removeItem('t'); location.reload(); };
+
+        function init() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            loadCats(); loadSettings(); fetchData('raw'); fetchData('pending'); fetchData('published'); fetchData('errors');
+            
+            // Navegación
+            document.querySelectorAll('nav button').forEach(b => {
+                b.onclick = (e) => {
+                    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('nav-active'));
+                    e.target.classList.add('nav-active');
+                    showSection(e.target.id.replace('nav-',''));
+                };
+            });
+            document.getElementById('nav-pending').click();
+        }
+
+        function showSection(id) {
+            ['crudo','pending','published','errors','config'].forEach(x => document.getElementById('sec-'+x).classList.add('hidden'));
+            document.getElementById('sec-'+id).classList.remove('hidden');
+            document.getElementById('sec-'+id).classList.add('fade-in');
+        }
+
+        // DATA & RENDER
+        async function fetchData(type, page=1) {
+            let url = `/posts/${type}?page=${page}&limit=${ROWS}`;
+            if(type==='pending') { const c=document.getElementById('cat-filter').value; if(c!=='Todas') url+=`&category=${encodeURIComponent(c)}`; }
+            try { renderTable(type, await req(url)); } catch(e){}
+        }
+
+        function renderTable(type, data) {
+            const tb = document.getElementById(`list-${type}`);
+            const pg = document.getElementById(`pag-${type}`);
+            tb.innerHTML = '';
+            if(data.posts.length===0) { tb.innerHTML=`<tr><td colspan="6" class="p-8 text-center text-gray-400">Vacío</td></tr>`; pg.innerHTML=''; return; }
+
+            data.posts.forEach(x => {
+                let html = '';
+                if(type==='raw') {
+                    html = `<td class="p-4 text-center"><input type="checkbox" class="raw-cb cursor-pointer" value="${x.id}"></td><td class="p-4 text-gray-500 text-xs">#${x.id}</td><td class="p-4 font-medium truncate max-w-md"><a href="${x.source_url}" target="_blank" class="text-indigo-600 hover:underline">${x.source_title||x.source_url}</a></td><td class="p-4 text-center"><button onclick="quickProc(${x.id})" class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition font-bold">Procesar ⚡</button></td>`;
+                } else if(type==='pending') {
+                    let st = `<span class="badge badge-pend">Borrador</span>`;
+                    if(x.status==='programado') {
+                        const d = new Date(x.scheduled_at);
+                        // HORA LOCAL CORRECTA (24h)
+                        const timeStr = d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:false});
+                        const dateStr = d.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit'});
+                        st = `<span class="badge badge-prog"><i class="far fa-clock mr-1"></i> ${dateStr} ${timeStr}</span>`;
+                    } else if(x.status==='publicar') st = `<span class="badge badge-cola">Cola</span>`;
+                    
+                    html = `<td class="p-4 text-gray-500 text-xs">#${x.id}</td><td class="p-4">${st}</td><td class="p-4 text-xs font-bold text-gray-600 uppercase">${x.category||'Gral'}</td><td class="p-4 font-medium text-gray-800">${x.fb_title||'Sin Título'}</td><td class="p-4 text-xs text-gray-500">${x.status==='programado'?new Date(x.scheduled_at).toLocaleString():'-'}</td><td class="p-4 text-center"><button onclick='edit(${JSON.stringify(x).replace(/'/g, "")})' class="text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded transition font-bold text-xs">GESTIONAR</button></td>`;
+                } else if(type==='published') {
+                    html = `<td class="p-3 text-sm">${x.fb_title}</td><td class="p-3 text-right"><span class="badge bg-green-100 text-green-800">Publicado</span></td>`;
+                } else {
+                    html = `<td class="p-3 text-xs text-red-600 font-mono">${x.fb_content}</td>`;
+                }
+                const tr=document.createElement('tr'); tr.innerHTML=html; tb.appendChild(tr);
+            });
+            if(data.total_pages>1) pg.innerHTML=`<div class="flex gap-2 text-xs justify-end"><button ${data.page===1?'disabled':''} onclick="fetchData('${type}',${data.page-1})" class="px-3 py-1 border rounded hover:bg-white disabled:opacity-50">Prev</button><span class="px-2 py-1 text-gray-500">${data.page}/${data.total_pages}</span><button ${data.page===data.total_pages?'disabled':''} onclick="fetchData('${type}',${data.page+1})" class="px-3 py-1 border rounded hover:bg-white disabled:opacity-50">Next</button></div>`;
+        }
+
+        // EDITOR
+        window.edit = (p) => {
+            document.getElementById('pid').value=p.id; document.getElementById('modal-id').innerText=p.id;
+            document.getElementById('fb_t').value=p.fb_title||''; document.getElementById('fb_c').value=p.fb_content||'';
+            document.getElementById('wp_t').value=p.wp_title||''; document.getElementById('wp_c').value=p.wp_content||'';
+            document.getElementById('img_url').value=p.image_url||''; 
+            document.getElementById('prev_img').src=p.image_url?(p.image_url.startsWith('/')?API+p.image_url:p.image_url):'';
+            document.getElementById('p_mode').value=p.publication_mode||'auto';
+            
+            const catSel = document.getElementById('edit-category');
+            catSel.value = p.category || 'General';
+
+            if(p.scheduled_at) {
+                const d = new Date(p.scheduled_at);
+                const local = new Date(d.getTime() - (d.getTimezoneOffset()*60000));
+                document.getElementById('p_date').value = local.toISOString().slice(0,16);
+            } else document.getElementById('p_date').value = '';
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('modal').classList.add('hidden');
+
+        window.save = async (st) => {
+            const id = document.getElementById('pid').value;
+            toast('Guardando...', 'loading');
+            try {
+                const f = document.getElementById('img_file').files[0];
+                let finalImg = document.getElementById('img_url').value;
+                if(f) { const u = await upload(id, f); finalImg = u.image_url; }
+
+                const data = {
+                    fb_title: document.getElementById('fb_t').value, fb_content: document.getElementById('fb_c').value,
+                    wp_title: document.getElementById('wp_t').value, wp_content: document.getElementById('wp_c').value,
+                    publication_mode: document.getElementById('p_mode').value,
+                    category: document.getElementById('edit-category').value,
+                    status: st, image_url: finalImg
+                };
+                const date = document.getElementById('p_date').value;
+                if(st==='programado') {
+                    if(!date) { toast('Falta fecha', 'error'); return; }
+                    data.scheduled_at = date; // [FIX HORA] Enviar tal cual (Browser Local -> Docker Local)
+                } else if(st==='publicar') data.scheduled_at = null;
+
+                await req(`/posts/${id}`, 'PUT', data);
+                toast('Éxito', 'success'); closeModal(); fetchData('pending');
+            } catch(e) { toast(e.message, 'error'); }
+        };
+
+        document.getElementById('select-all-raw').onchange = (e) => {
+            document.querySelectorAll('.raw-cb').forEach(c => c.checked = e.target.checked);
+            updateRawBtns();
+        };
+        document.getElementById('list-raw').addEventListener('change', updateRawBtns);
+        function updateRawBtns() {
+            const n = document.querySelectorAll('.raw-cb:checked').length;
+            document.getElementById('process-selected-raw-button').disabled = n===0;
+            document.getElementById('delete-selected-raw-button').disabled = n===0;
+            document.getElementById('sel-count').innerText = n;
+        }
+        document.getElementById('process-selected-raw-button').onclick = async () => {
+            const ids = Array.from(document.querySelectorAll('.raw-cb:checked')).map(c=>parseInt(c.value));
+            toast(`Procesando ${ids.length}...`, 'loading');
+            try { await req('/posts/process-selected', 'POST', {ids}); toast('Listo', 'success'); fetchData('raw'); fetchData('pending'); }
+            catch(e) { toast('Error', 'error'); }
+        };
+
+        window.quickProc = async(id) => { toast('Procesando...', 'loading'); await req('/posts/process-selected', 'POST', {ids:[id]}); toast('Listo','success'); fetchData('raw'); fetchData('pending'); };
+        window.regen = async(plat) => { 
+            toast('Regenerando...', 'loading'); 
+            const r = await req(`/posts/${document.getElementById('pid').value}/regenerate-quick?platform=${plat}`, 'POST');
+            if(plat==='facebook'){document.getElementById('fb_t').value=r.fb_title;document.getElementById('fb_c').value=r.fb_content;}
+            else{document.getElementById('wp_t').value=r.wp_title;document.getElementById('wp_c').value=r.wp_content;}
+            toast('Texto actualizado','success');
+        };
+        window.customGen = async() => {
+            toast('IA Pensando...', 'loading');
+            const r = await req('/posts/regenerate-custom', 'POST', {post_id:parseInt(document.getElementById('pid').value), field_to_update:document.getElementById('cust_field').value, custom_prompt:document.getElementById('cust_prompt').value});
+            const map={'fb_content':'fb_c','fb_title':'fb_t','wp_content':'wp_c','wp_title':'wp_t'};
+            if(r[document.getElementById('cust_field').value]) document.getElementById(map[document.getElementById('cust_field').value]).value = r[document.getElementById('cust_field').value];
+            toast('Aplicado','success');
+        };
+        window.clearErrors = async() => { if(confirm("¿Limpiar?")) { await req('/posts/errors/clear', 'POST'); fetchData('errors'); } };
+        async function loadCats() { try { const c = await req('/posts/categories'); const s = document.getElementById('cat-filter'); const se = document.getElementById('edit-category'); s.innerHTML = '<option>Todas</option>'; se.innerHTML = ''; c.forEach(x => { s.innerHTML += `<option>${x}</option>`; se.innerHTML += `<option>${x}</option>`; }); } catch {} }
+        async function loadSettings() { try{const s=await req('/settings'); document.getElementById('set-scrap').value=s.scraper_interval; document.getElementById('set-pub').value=s.publish_interval;}catch{} }
+        document.getElementById('settings-form').onsubmit = async(e) => { e.preventDefault(); try { await req('/settings', 'POST', { scraper_interval: parseInt(document.getElementById('set-scrap').value), publish_interval: parseInt(document.getElementById('set-pub').value) }); toast('Configuración guardada', 'success'); } catch { toast('Error', 'error'); } };
+    </script>
+</body>
+</html>

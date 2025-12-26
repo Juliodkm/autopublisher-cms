@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      TZ: America/Lima
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # 2. API (Tu Backend)
+  api:
+    build: .
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - TZ=America/Lima
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    volumes:
+      - ./src/static:/app/src/static # Persistencia de imágenes
+    depends_on:
+      - db
+
+  # 3. Scheduler (Tu Reloj)
+  scheduler:
+    build: .
+    command: python src/scheduler.py
+    environment:
+      - API_URL=http://api:8000
+      - TZ=America/Lima
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

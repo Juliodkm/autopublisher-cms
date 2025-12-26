@@ -1,0 +1,23 @@
+# .gitignore
+
+# Archivos de entorno y claves (¡MUY IMPORTANTE!)
+.env
+.venv
+venv/
+env/
+
+# Archivos de sistema y compilados
+__pycache__/
+*.pyc
+.DS_Store
+
+# Datos de Base de Datos y Backups
+postgres_data/
+*.sql
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
