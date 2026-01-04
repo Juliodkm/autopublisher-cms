@@ -6,9 +6,10 @@ Sistema automatizado para la gestión, reescritura con IA y publicación de noti
 
 * **Scraping Automático:** Monitorea medios de noticias configurados cada X minutos.
 * **IA Integrada:** Utiliza GPT-4o-mini para reescribir y resumir noticias.
-* **Estrategia de Rebote:** * *Modo Foto:* Sube imagen a FB con enlace en la descripción.
+* **Estrategia de Rebote:**
+    * *Modo Foto:* Sube imagen a FB con enlace en la descripción.
     * *Modo Link:* Genera tarjeta de vista previa apuntando a la web.
-* **Programación Inteligente:** Cálculo automático de colas (+45min) y agenda manual.
+* **Programación Manual por Fecha:** Permite agendar la publicación de noticias en una fecha y hora exactas seleccionadas por el usuario.
 * **Dockerizado:** Despliegue sencillo y entorno aislado.
 
 ## 🛠️ Tecnologías

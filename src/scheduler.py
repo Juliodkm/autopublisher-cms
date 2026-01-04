@@ -75,7 +75,7 @@ if __name__ == "__main__":
     load_settings()
 
     schedule.every(SETTINGS['scraper_interval']).minutes.do(run_scraper)
-    schedule.every(SETTINGS['publish_interval']).minutes.do(run_publisher)
+    # schedule.every(SETTINGS['publish_interval']).minutes.do(run_publisher)
     schedule.every(1).minutes.do(check_scheduled)
 
     print("-> Tareas programadas y listas.")

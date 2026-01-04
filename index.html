@@ -279,7 +279,6 @@
 
                 <div class="flex gap-2">
                     <button onclick="save('pendiente')" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-600 font-bold rounded-lg hover:bg-gray-50 transition text-sm">Guardar Borrador</button>
-                    <button onclick="save('publicar')" class="px-5 py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition text-sm shadow-md flex items-center"><i class="fas fa-layer-group mr-2"></i> A la Cola (45m)</button>
                     <button onclick="save('programado')" class="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition text-sm shadow-md flex items-center"><i class="fas fa-clock mr-2"></i> Programar</button>
                 </div>
             </div>
@@ -425,7 +424,7 @@
                 if(st==='programado') {
                     if(!date) { toast('Falta fecha', 'error'); return; }
                     data.scheduled_at = date; // [FIX HORA] Enviar tal cual (Browser Local -> Docker Local)
-                } else if(st==='publicar') data.scheduled_at = null;
+                }
 
                 await req(`/posts/${id}`, 'PUT', data);
                 toast('Éxito', 'success'); closeModal(); fetchData('pending');
